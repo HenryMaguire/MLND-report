@@ -235,18 +235,34 @@ Once we have the output of the decoder for a batch, we apply a projection layer,
 
 Take the projection layer logits and calculate an argmax over the scores for the different words. i.e. maximizing the score of the predicted word. A softmax function was then applied to the logits/scores to get probabilities. The probability distributions are compared with the one-hot encoded predictions using cross-entropy. Now we have a tensor of dimension \lstinline{(decoder max step number, decoder batch size)} since we will have calculated how well our prediction scored for each next-word prediction in the batch. A collective measure of batch loss was then calculated by taking the mean of all of the cross-entropies.
 
-Backpropagation was performed over the two unrolled RNNs, which was done by using the simple Tensorflow API by defining an AdaM optimiser and then calling the minimise method. AdaM combines elements of AdaGrad, where parameters which are updated less often get updated more strongly, and momentum where updates depend on the overall slope of previous updates. These features help to avoid local minima as well as performing efficiently[20].
+Backpropagation was performed over the two unrolled RNNs, which was done by using the simple Tensorflow API by defining an AdaM optimiser and then calling the minimise method. AdaM combines elements of AdaGrad, where parameters which are updated less often get updated more strongly, and momentum where updates depend on the overall slope of previous updates. These features help to avoid local minima as well as performing efficiently\footnote{\href{https://arxiv.org/pdf/1412.6980v8.pdf}{AdaM paper:  Kingma and Ba 2015}}.
 \iffalse
 \includegraphics[width=\textwidth]{"C:/Users/mbcxrhm2/Dropbox/PhD/1st year/DrivenTLS/Images/alpha_ph Dep/Populations/a0p01_T6000".png}
 ![seq2seq at training time](pictures/1-seq2seq.png)
 \fi
 
-Then the model was trained on a fifth of the available training data, which is 80,000 samples, in order to observe the quality of different hyper-parameter regimes.
+Then the model was trained on a 15\% of the available training data, which was around 75,000 samples, in order to test how long the model took to train given different sets of hyper-parameters. The encoder inputs were also reversed, as this has been shown to speed up training time substantially in language translation models. For example, rather than translating from $[a, b, c] \to [\alpha, \beta, \gamma]$ the source sequences are reversed: $[c, b, a] \to [\alpha, \beta, \gamma]$ so that $a$ and $\alpha$ are in close proximity in time. This is a main theoretical contribution of this seminal paper\footnote{\href{https://papers.nips.cc/paper/5346-sequence-to-sequence-learning-with-neural-networks.pdf}{Sutskever et al. 2014}}.
 \subsection{Refinement}
-Even using the drastically reduced phrase lengths proved to be difficult to train properly. The maximum sequence lengths were decreased even further, to 18 and 15 for the preprocessed French and English raw data, leaving 354,834 sequence pairs for training and testing. Just making this change cut 500 seconds per epoch off the training time.
+Even using the drastically reduced phrase lengths proved to be difficult to train properly. The maximum sequence lengths were decreased even further, to 18 and 15 for the preprocessed French and English raw data, leaving 354,834 sequence pairs for training and testing. Just making this change cut 500 seconds per epoch off the training time. Encoder and decoder hidden unit numbers were experimented with and it seemed that choosing 512 gave good performance while still being relatively quick to train.
 \section{Results}
 The model was trained in batches of 100 for as many epochs of the training data as it took for the loss to stop decreasing substantially, this was around 35 epochs. Predictions were made on the test data every 5 epochs in order to observe how the training time affected the validity of the model. The feed previous probability was set to be $P_f=0.7$ and the number of hidden units in the encoder and decoder was $N_h=512$ each. Another model was trained with the same parameters but for $P_f=0.5$. In figure \ref{fig:over_time} it can be seen that the feed previous probability does not affect the model quality significantly. The model also seems to have learned all that it can already by only 5 epochs. In the discussion below, $P_f=0.7$ since this scores slightly higher and is likely to be more robust, and the number of epochs is 30.
 
+After only around 6 epochs the model was making predictions on the training data which were more accurate than some of the data, for example: 
+
+\begin{center}
+	\textbf{Source:} ``scrutin du jour du lendemain le h 9" 
+	
+	\textbf{actual:} ``there is a tie or difference between first 2 candidates is less than 10 votes" 
+	
+	\textbf{predicted:}  ``9 are no day in a between the day months".
+
+\end{center}
+Here the English translation is totally incorrect and is obviously just some noise in the dataset, however the NMT prediction is in the right ball-park, since the google translate answer is "9:00 am the day after polling day". Similarly, after 16 epochs the model made predictions on of the training data with a very similar meaning to the correct translation but expressed differently, for example:
+\begin{center}
+\textbf{Actual:} some 15 of the park's native mammal species are considered rare threatened or endangered 
+\textbf{predicted:} several of percent the species's marine mammal species are rare threatened or endangered
+\end{center}
+which is quite impressive, given the short training time. Since the model was being fed 30\% of ground truth target data as input during training, and had been learning these phrases for several epochs, these training outputs are not too indicative of success. Next section the results on the test set will be analysed.
 \begin{figure}[h]
 	\centering
 	\begin{minipage}[b]{0.48\textwidth}
@@ -259,7 +275,7 @@ The model was trained in batches of 100 for as many epochs of the training data 
 	\label{fig:over_time}
 \end{figure}
 
-\subsection{Justification}
+\subsection{Model Evaluation and Validation}
 
 \begin{figure}[h]
 	\centering
@@ -272,38 +288,39 @@ The model was trained in batches of 100 for as many epochs of the training data 
 	\caption{Average BLEU1 score for the NMT (left) and benchmark model (right) for sequences of each length. Note: $y$-axis for BM is one tenth of the height.}
 	\label{fig:per_sequence}
 \end{figure}
-In figure \ref{fig:per_sequence} the unigram BLEU scores are averaged over sequences of the same length. It can be seen that on average the neural machine translation solution gains a much higher average score for sequences of all lengths. Importantly, the median score for the benchmark is zero for all sequence lengths (and all N-grams), which means that there are a large number of zero scores seriously skewing the average downwards. However, by inspecting some of the translation attempts we can see that when the benchmark model succeeds, it does very well \textbf{TODO: GIVE BM EXAMPLES}. The problem is that the BM gets a BLEU score of zero far more often (11475 times) than the LSTM model (2450 times) which brings the average down substantially. one reason for this is that the dictionary method has access to a far wider vocabulary than is in the vocabulary of the test data so will often miss the mark completely. In fact, only 64\% of words chosen by the benchmark model were actually in the target corpus. In effect, this is a failure on the part of the BLEU scoring method I have chosen, since the target test corpus is made up of only singular reference sequences, rather than different paraphrases of the same phrase. It is likely that the benchmark does actually contain more information than this BLEU1 score gives it credit for, but the rigid, limited test vocabulary does not take this into account.
+In figure \ref{fig:per_sequence} the unigram BLEU scores are averaged over sequences of the same length. It can be seen that on average the neural machine translation solution gains a much higher average score for sequences of all lengths. Importantly, the median score for the benchmark is zero for all sequence lengths (and all N-grams), which means that there are a large number of zero scores seriously skewing the average downwards. However, by inspection of some of the translation attempts we can see that when the benchmark model succeeds, it does very well \textbf{TODO: GIVE BM EXAMPLES}. The problem is that the BM gets a BLEU score of zero far more often (11475 times) than the LSTM model (2450 times) which brings the average down substantially. one reason for this is that the dictionary method has access to a far wider vocabulary than is in the vocabulary of the test data so will often miss the mark completely. In fact, only 64\% of words chosen by the benchmark model were actually in the target corpus. In effect, this is a failure on the part of the BLEU scoring method I have chosen, since the target test corpus is made up of only singular reference sequences, rather than different paraphrases of the same phrase. It is likely that the benchmark does actually contain more information than this BLEU1 score gives it credit for, but the rigid, limited test vocabulary does not take this into account.
 
 From figure \ref{fig:per_sequence} it can be seen that the dictionary method performs worse for shorter sequences and improves as the average length increases. Conversely, the Neural Machine Translator performs exceptionally well on shorter sequences, with a median unigram BLEU score of 1 for two-word phrases. For very long phrases the performance of the LSTM declines slightly, which is to be expected as outlined in Cho et al\ref{hyp:cho}.
 
 The NMT produces very similar phrase length statistics to the target corpus, with the same mean, median and 1st quartile of 9.4, 10.0 and 8.0 words, respectively. This is compared to the BM which produced slightly longer predictions, with mean and median of 11 and Q1 of 8.0. This is expected since some dictionary equivalents of singular French words will be multiple English words long, without incurring any penalty, whereas losses due to predictions being too long are minimised when training the NMT.
 
 The NMT often gives something with a similar syntactical structure but says something quite unrelated e.g. :
-
-\textbf{Target :} (sic) `alternatively hormones may act on structures other then the acl'.
+\begin{center}
+	\textbf{Target :} (sic) `alternatively hormones may act on structures other then the acl'.
 	
-\textbf{Translation:} `moreover \lstinline{<UNK>} can be aggressively on in structures structures structures'.
+	\textbf{Translation:} `moreover \lstinline{<UNK>} can be aggressively on in structures structures structures'.
+\end{center}
+Here we can also see here that the predictions have a tendency to repeat words at the end of sequences. It is also worth noting that the 4-gram BLEU score was not found to be useful at all, for example the NMT output: 
+\begin{center}
+	\textbf{Target:} ``it accurately portrays the agency's plans and priorities"
 
-We can also see here that the predictions have a tendency to repeat words at the end of sequences.
+\textbf{Prediction:} ``it accurately portrays the organisation's plans and priorities"
+\end{center}
+which is a veritable success, scored 0.59 BLEU4, whereeas:
+\begin{center}
+	\textbf{Actual:} ``we all very much miss his exemplary spirit and skills"
 
-It is worth noting that the 4-gram BLEU score was not found to be useful at all, for example: 
-Target: 'it accurately portrays the agency's plans and priorities'
-Prediction: 'it accurately portrays the organisation's plans and priorities
-Scored 0.59 BLEU4, where:
-Actual: 'we all very much miss his' exemplary spirit and skills'
-
-Prediction: 'the and and skill skill skill to all of all stories'
-scored 0.65 BLEU4, even though the former prediction is far superior to the latter.
-Overall the translation has an impressive ability to maintain information/vernacular, although is not reliable at conveying the same meaning and not convincing as a human interpreter.
-\subsection{Model Evaluation and Validation}
-
+\textbf{Precition:} ``the and and skill skill skill to all of all stories"
+\end{center}
+scored 0.65 BLEU4, even though it is essentially a failure.
 \section{Conclusion}
-Even if the NMT system doesn't beat the benchmark across the board, it can be used to show some interesting things.
-
+In summary, a single-layer unidirectional Neural Machine Translation system was built with encoder-decoder architecture. The system was trained on source (target) sequences up to 18 (15) tokens long on a relatively noisy and open-domain dataset, taking only a few hours on a single GPU. Tokens predicted by the system at each time-step were fed in as inputs for the next time-step as a statistical mixture with the ground truth data in order to improve robustness and decrease training time.
+Overall the NMT system has an impressive ability to maintain information/vernacular, although is not consistently reliable at conveying the same meaning and generally not convincing as a human interpreter. On average it performs far better than a benchmark dictionary based model, however this is in part due to a bias against how articulate the benchmark model is and the constraints of using BLEU scoring with only one set of refernence phrases.
 
 \subsection{Improvement}
-It seems like the model is not expressive enough to make a convincing translation system. I think that having two shallower layers would work better than one deeper one while still being able to fit on a single GPU. It would be interesting to analyse the qualitative effect that this has on the predictions and the increase in ability to handle longer sequences. I would also like to experiment with attention mechanisms, as these have been shown to increase performance drastically without increasing the number of parameters significantly.
+It seems that the model is not expressive enough to make a convincing translation system. I think that having two shallower layers would work better than one deeper one while still being able to fit on a single GPU. It would be interesting to analyse the qualitative effect that this has on the predictions and the increase in ability to handle longer sequences. I would also like to experiment with attention mechanisms, as these have been shown to increase performance drastically without increasing the number of parameters significantly. Bidirectionality of the encoder and decoder layers would also be likely to improve the performance of the model significantly
 
+On a more technical note, a few thing
 
 
 \end{document}
