@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2016.1.11)  18 OCT 2017 11:45
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2016.1.11)  18 OCT 2017 12:11
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -520,20 +520,20 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 [9 <./Images/50Ngram_BLEU_over_time.png> <./Images/70Ngram_BLEU_over_time.png>]
 [10 <./Images/NoEmbeddings30Epochs.png> <./Images/BM_Unigram.png>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 310.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 309.
  [11]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 310.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 309.
 
 (./template_Article.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 310.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 310.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 309.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 309.
 Package rerunfilecheck Info: File `template_Article.out' has not changed.
 (rerunfilecheck)             Checksum: D7036AE95AC370480DC22A571CC97C67;1314.
 
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 310.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 309.
  ) 
 Here is how much of TeX's memory you used:
  8499 strings out of 493089
@@ -564,10 +564,10 @@ f-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2015/texmf-
 dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/local/texlive/2015/texmf-di
 st/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2015/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on template_Article.pdf (11 pages, 450033 bytes).
+Output written on template_Article.pdf (11 pages, 450477 bytes).
 PDF statistics:
- 321 PDF objects out of 1000 (max. 8388607)
- 271 compressed objects within 3 object streams
+ 323 PDF objects out of 1000 (max. 8388607)
+ 273 compressed objects within 3 object streams
  65 named destinations out of 1000 (max. 500000)
  204 words of extra memory for PDF output out of 10000 (max. 10000000)
 

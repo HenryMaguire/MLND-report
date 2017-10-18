@@ -272,23 +272,21 @@ The model was trained in batches of 100 for as many epochs of the training data 
 	\caption{Average BLEU1 score for the NMT (left) and benchmark model (right) for sequences of each length. Note: $y$-axis for BM is one tenth of the height.}
 	\label{fig:per_sequence}
 \end{figure}
-In figure \ref{fig:per_sequence} the unigram BLEU scores are averaged over sequences of the same length. It can be seen that on average the neural machine translation solution gains a much higher average score for sequences of all lengths. Importantly, the median score for the benchmark is zero for all sequence lengths (and all N-grams), which means that there are a large number of zero scores seriously skewing the average downwards. However, by inspecting some of the translation attempts we can see that when the benchmark model succeeds, it does very well \textbf{TODO: GIVE BM EXAMPLES}. In fact, only 64\% of words chosen by the benchmark model were actually in the target corpus. 
-Ground truth
-Min: 1  Max: 15  Mean: 9.36   Median: 10.0   Mode: 10   1st Quart.: 7.0   IQR: 5.0   3rd Quart.: 12.0
-NMT
-Min: 1  Max: 17  Mean: 9.40   Median: 10.0   Mode: 9   1st Quart.: 7.0   IQR: 5.0   3rd Quart.: 12.0
-Dictionary method
-Min: 1  Max: 18  Mean: 11.03   Median: 11.0   Mode: 11   1st Quart.: 8.0   IQR: 6.0   3rd Quart.: 14.0
-For the NMT, the median is slightly lower than the mean for all sequence 
-Dictionary method is worse for shorter sentences but better as they get longer. It's predictions are on average longer than the target data.
-\begin{itemize}
-	\item Also, the NMT very similar phrase length statistics to the target corpus, with the same mean, median and 1st quartile of 9.4, 10.0 and  8.0 word , respectively. This is compared to the BM which gave a mean and median of 11 and Q1 of 8.0. This is expected since some dictionary equivalents of singular French words will be multiple English words long, without any penalty, whereas losses due to predictions being too long are minimised when training the NMT.
-	\item When the dictionary method gets it right it is great, however it scores zero far more often (11475 times) than the LSTM model (2450 times) which brings the mean down substantially. However, the dictionary method has access to a far wider vocabulary than is in the vocabulary of the test data (similar vocab to the trained model) so will often miss the mark.
-	\item LSTM has no trouble with longer sentences and tends to repeat words.
-	\item LSTM often gives something with a similar syntactical structure but say something quite unrelated e.g. (sic) 'alternatively hormones may act on structures other then the acl' is translated to 'moreover \lstinline{<UNK>} can be aggressively on in structures structures structures'.
-	\item Overall the translation has an impressive ability to maintain information/vernacular, although is not reliable at conveying the same meaning and not convincing as a human interpreter.
-\end{itemize}
-I found the 4-gram BLEU score to not be useful at all. For example: 
+In figure \ref{fig:per_sequence} the unigram BLEU scores are averaged over sequences of the same length. It can be seen that on average the neural machine translation solution gains a much higher average score for sequences of all lengths. Importantly, the median score for the benchmark is zero for all sequence lengths (and all N-grams), which means that there are a large number of zero scores seriously skewing the average downwards. However, by inspecting some of the translation attempts we can see that when the benchmark model succeeds, it does very well \textbf{TODO: GIVE BM EXAMPLES}. The problem is that the BM gets a BLEU score of zero far more often (11475 times) than the LSTM model (2450 times) which brings the average down substantially. one reason for this is that the dictionary method has access to a far wider vocabulary than is in the vocabulary of the test data so will often miss the mark completely. In fact, only 64\% of words chosen by the benchmark model were actually in the target corpus. In effect, this is a failure on the part of the BLEU scoring method I have chosen, since the target test corpus is made up of only singular reference sequences, rather than different paraphrases of the same phrase. It is likely that the benchmark does actually contain more information than this BLEU1 score gives it credit for, but the rigid, limited test vocabulary does not take this into account.
+
+From figure \ref{fig:per_sequence} it can be seen that the dictionary method performs worse for shorter sequences and improves as the average length increases. Conversely, the Neural Machine Translator performs exceptionally well on shorter sequences, with a median unigram BLEU score of 1 for two-word phrases. For very long phrases the performance of the LSTM declines slightly, which is to be expected as outlined in Cho et al\ref{hyp:cho}.
+
+The NMT produces very similar phrase length statistics to the target corpus, with the same mean, median and 1st quartile of 9.4, 10.0 and 8.0 words, respectively. This is compared to the BM which produced slightly longer predictions, with mean and median of 11 and Q1 of 8.0. This is expected since some dictionary equivalents of singular French words will be multiple English words long, without incurring any penalty, whereas losses due to predictions being too long are minimised when training the NMT.
+
+The NMT often gives something with a similar syntactical structure but says something quite unrelated e.g. :
+
+\textbf{Target :} (sic) `alternatively hormones may act on structures other then the acl'.
+	
+\textbf{Translation:} `moreover \lstinline{<UNK>} can be aggressively on in structures structures structures'.
+
+We can also see here that the predictions have a tendency to repeat words at the end of sequences.
+
+It is worth noting that the 4-gram BLEU score was not found to be useful at all, for example: 
 Target: 'it accurately portrays the agency's plans and priorities'
 Prediction: 'it accurately portrays the organisation's plans and priorities
 Scored 0.59 BLEU4, where:
@@ -296,6 +294,7 @@ Actual: 'we all very much miss his' exemplary spirit and skills'
 
 Prediction: 'the and and skill skill skill to all of all stories'
 scored 0.65 BLEU4, even though the former prediction is far superior to the latter.
+Overall the translation has an impressive ability to maintain information/vernacular, although is not reliable at conveying the same meaning and not convincing as a human interpreter.
 \subsection{Model Evaluation and Validation}
 
 \section{Conclusion}
